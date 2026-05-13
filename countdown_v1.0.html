@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuenta Atrás</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0e1a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+  }
+
+  .container {
+    text-align: center;
+    padding: 50px 80px;
+    background: #0d1321;
+    border-radius: 16px;
+    box-shadow: 0 0 60px rgba(0, 200, 255, 0.08);
+    width: 90vw;
+    max-width: 1100px;
+  }
+
+  .title {
+    color: #4dcfea;
+    font-size: clamp(1.2rem, 3.5vw, 2.2rem);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    opacity: 0.85;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+
+  .title::before {
+    content: "⏱";
+    font-size: 1.4em;
+    opacity: 0.8;
+    flex-shrink: 0;
+  }
+
+  .clock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: clamp(100px, 18vw, 170px);
+  }
+
+  .number {
+    font-size: clamp(4.5rem, 12vw, 9rem);
+    font-weight: 900;
+    color: #00d4ff;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 30px rgba(0, 212, 255, 0.6), 0 0 60px rgba(0, 212, 255, 0.25);
+    font-variant-numeric: tabular-nums;
+    font-family: 'Courier New', monospace;
+  }
+
+  .label {
+    font-size: clamp(0.6rem, 1.2vw, 0.85rem);
+    color: #4dcfea;
+    letter-spacing: 0.35em;
+    margin-top: 10px;
+    opacity: 0.6;
+    text-transform: uppercase;
+  }
+
+  .separator {
+    font-size: clamp(3.5rem, 9vw, 7rem);
+    color: #00d4ff;
+    opacity: 0.4;
+    padding: 0 6px;
+    margin-bottom: 28px;
+    font-weight: 300;
+    line-height: 1;
+    align-self: flex-start;
+    margin-top: 14px;
+  }
+
+  .subtitle {
+    margin-top: 36px;
+    color: #4dcfea;
+    font-size: clamp(0.75rem, 1.4vw, 1rem);
+    opacity: 0.6;
+    letter-spacing: 0.05em;
+  }
+
+  .subtitle strong {
+    opacity: 1;
+    font-weight: bold;
+    color: #7ee8f8;
+  }
+
+  /* Wake lock indicator */
+  #wakelock-indicator {
+    position: fixed;
+    top: 12px;
+    left: 14px;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: #4dcfea;
+    opacity: 0.18;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+    transition: opacity 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #wakelock-indicator:hover { opacity: 0.5; }
+  #wakelock-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4dcfea;
+    animation: blink 3s infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  /* Botón oculto en esquina */
+  #settings-btn {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 0.07;
+    transition: opacity 0.3s;
+    font-size: 16px;
+    color: #4dcfea;
+    z-index: 100;
+  }
+  #settings-btn:hover { opacity: 0.6; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.78);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: #0d1321;
+    border: 1px solid #1a3a4a;
+    border-radius: 12px;
+    padding: 34px 40px;
+    min-width: 380px;
+    box-shadow: 0 0 50px rgba(0, 200, 255, 0.15);
+  }
+
+  .modal h2 {
+    color: #4dcfea;
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 26px;
+    opacity: 0.8;
+  }
+
+  .form-group { margin-bottom: 18px; }
+
+  .form-group label {
+    display: block;
+    color: #4dcfea;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    opacity: 0.7;
+  }
+
+  .form-group input {
+    width: 100%;
+    background: #111827;
+    border: 1px solid #1a3a4a;
+    border-radius: 6px;
+    color: #00d4ff;
+    padding: 9px 13px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus { border-color: #00d4ff; }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 26px;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    padding: 9px 22px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    border: 1px solid #1a3a4a;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: #003d52; color: #00d4ff; border-color: #00d4ff33; }
+  .btn-primary:hover { background: #005570; box-shadow: 0 0 14px rgba(0,212,255,0.25); }
+  .btn-secondary { background: transparent; color: #4dcfea; opacity: 0.6; }
+  .btn-secondary:hover { opacity: 1; }
+
+  .finished {
+    font-size: clamp(1.2rem, 3vw, 2rem);
+    color: #00d4ff;
+    text-shadow: 0 0 30px rgba(0,212,255,0.9);
+    letter-spacing: 0.2em;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+</style>
+<script type="text/javascript" nonce="93c93be58b074631907955c4a1a" src="//injections.adguard.org?ts=1778702187580&amp;type=content-script&amp;dmn=ppl-ai-code-interpreter-files.s3.amazonaws.com&amp;url=https%3A%2F%2Fppl-ai-code-interpreter-files.s3.amazonaws.com%2Fweb%2Fdirect-files%2Fbabc24f50395c68cd2d67c98b5e16468%2F8ce1006a-0a4b-49a5-b904-5b5bd5fed296%2F4980de8e.html%3Fresponse-content-disposition%3Dattachment%253B%2520filename%253D%2522countdown_v2.html%2522%253B%2520filename%252A%253DUTF-8%2527%2527countdown_v2.html%26AWSAccessKeyId%3DASIA2F3EMEYEZX5NJPNX%26Signature%3DlV%252BTpDoM7gIHfPVPItx08p4KV2E%253D%26x-amz-security-token%3DIQoJb3JpZ2luX2VjEIX%252F%252F%252F%252F%252F%252F%252F%252F%252F%252FwEaCXVzLWVhc3QtMSJGMEQCIGJR49zhPzm8ZHCH6QXAw25Y7EhLuGAkavQxmaNA7NVvAiBE2nP%252FWdWpEscXlq3%252BKoIALcKdleOIRwFO17Bu40oOkirzBAhNEAEaDDY5OTc1MzMwOTcwNSIM79Yc5b1QDEoqnAgWKtAE6LYLFFGOIYvDyzvu%252Fw5hp5jnbY345a6yc9oP4NVyx8h1sXedzenMlNZxqS0mSYqVfV1gGG6mV9T%252BGDYg699%252FgdMAH8Zbmn71sPZw0j2Y8X1HHgST3kRb3kM9rFwjc3TGkzrPymGy%252BBBtjbxFpi8GVQLLws0Gt79UbEwnBcNu03bLdrDT1q4m8xHjx%252FPYa0%252Fb2Hd88Q6CFdPdKBDel%252B7w%252F8GS34May0vXoqEO093d%252B63LFo3g9ix9kANxgt2xOuXSHfJsl8UsObah%252BstFJBwu%252FEtYV4dl4VQY6cqY5ePTU%252BbLQCZ8LEdeRRSIKkrUEm%252B8gU6tvsWtl5QRGe8nX%252B5E6pugZgZPJodgVTr9Qakc0bAM7faDHh13vCuyrZ%252FmtmDSH6zSONXQ%252FU7%252Bx09E%252B4powniqBQBO%252B9FE8CO0gguE%252FkYXI9shXnAs8i6NoOItui%252FWnntLFh6jJ9fGBosDdKjI%252B2I3JxZ5Yjge13mqKgoKsv13gSmxHTQjMALQKx0vECdAx%252BqWdaybWl5aE0875f0GReq4yit%252BB%252B6Qy1cUgigt5D%252BTv2QQcbx4mNAe95odmNmDtKvZAzEp6hGbFbOiDy36f%252FkZiglzJWCXPK%252FCtQ%252Bc3xYoFrdwMdI4xO0OIx9frcyECX0Lbowq4LDyEHwxXZtZSt9Wt4zFrWSA6nHTfZmsih9eBHuIZ88v%252FbaUVFIf5UE5dvNtNbrflepPPiOD%252BvBzLbGtpAO0NvPWN8FwScSpYnNKsyGec0eVvh0WCY7Vv4zuJn9pIGo5YL38gRgC3Nr1nzCbtZPQBjqZASdNovjnbvD2afixvCgiSqpPXsKrRGPI%252FwliRfz95JAJqNvb1GmJME6U3Y22oiNIvyZ5wqVliyQmJN9grsbF9OfNe41XrUwNOOd1QmtPQzHeYUgWPi1aoa%252BT3CynNzO3jMVhf2UPEY9yyE%252FzBkBKPuV1tU%252Fksp%252FSxkXc0EliXu%252B5Jq7s9VMXXYN3aWrr6O5HiGPXFk1bjo04aw%253D%253D%26Expires%3D1778704258&amp;app=chrome.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1&amp;stealth=1&amp;st-dnt"></script><script type="text/javascript" nonce="93c93be58b074631907955c4a1a" src="//injections.adguard.org?ts=1778702187580&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script></head>
+<body>
+
+<!-- Indicador wake lock -->
+<div id="wakelock-indicator">
+  <div id="wakelock-dot"></div>
+  <span id="wakelock-text">STANDBY</span>
+</div>
+
+<div class="container">
+  <div class="title" id="main-title">CUENTA ATRÁS</div>
+  <div class="clock" id="clock">
+    <div class="unit">
+      <div class="number" id="days">000</div>
+      <div class="label">DÍAS</div>
+    </div>
+    <div class="separator">:</div>
+    <div class="unit">
+      <div class="number" id="hours">00</div>
+      <div class="label">HORAS</div>
+    </div>
+    <div class="separator">:</div>
+    <div class="unit">
+      <div class="number" id="minutes">00</div>
+      <div class="label">MIN</div>
+    </div>
+    <div class="separator">:</div>
+    <div class="unit">
+      <div class="number" id="seconds">00</div>
+      <div class="label">SEG</div>
+    </div>
+  </div>
+  <div class="subtitle" id="subtitle-line">
+    Cuenta atrás hasta el <strong id="target-display"></strong>
+  </div>
+</div>
+
+<button id="settings-btn" title="Ajustes" onclick="openModal()">⚙</button>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>⚙ Configuración</h2>
+    <div class="form-group">
+      <label>Título</label>
+      <input type="text" id="input-title" placeholder="Ej: LANZAMIENTO DEL PROYECTO">
+    </div>
+    <div class="form-group">
+      <label>Subtítulo / Mensaje</label>
+      <input type="text" id="input-subtitle" placeholder="Ej: Cuenta atrás hasta el">
+    </div>
+    <div class="form-group">
+      <label>Fecha y hora objetivo</label>
+      <input type="datetime-local" id="input-datetime">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Estado ────────────────────────────────────────────────
+  let targetDate  = new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000);
+  let titleText   = "CUENTA ATRÁS";
+  let subtitleText = "Cuenta atrás hasta el";
+  let wakeLock    = null;
+
+  // ── Wake Lock API ─────────────────────────────────────────
+  async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) {
+      document.getElementById('wakelock-text').textContent = 'NO SOPORTADO';
+      return;
+    }
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      document.getElementById('wakelock-text').textContent = 'ACTIVO';
+      document.getElementById('wakelock-dot').style.background = '#00ff99';
+      wakeLock.addEventListener('release', () => {
+        document.getElementById('wakelock-text').textContent = 'INACTIVO';
+        document.getElementById('wakelock-dot').style.background = '#4dcfea';
+      });
+    } catch(e) {
+      document.getElementById('wakelock-text').textContent = 'ERROR';
+    }
+  }
+
+  // Re-adquirir wake lock si la página recupera visibilidad
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && wakeLock === null) {
+      requestWakeLock();
+    }
+  });
+
+  requestWakeLock();
+
+  // ── Utilidades ────────────────────────────────────────────
+  function pad(n, len) { return String(n).padStart(len, '0'); }
+
+  function formatDate(d) {
+    const months = ['enero','febrero','marzo','abril','mayo','junio','julio',
+                    'agosto','septiembre','octubre','noviembre','diciembre'];
+    return d.getDate() + ' de ' + months[d.getMonth()] + ' de ' + d.getFullYear();
+  }
+
+  // ── Contador ──────────────────────────────────────────────
+  function updateDisplay() {
+    const diff = targetDate - new Date();
+    if (diff <= 0) {
+      document.getElementById('clock').innerHTML = '<div class="finished">¡TIEMPO CUMPLIDO!</div>';
+      document.getElementById('subtitle-line').style.display = 'none';
+      return;
+    }
+    const days    = Math.floor(diff / 86400000);
+    const hours   = Math.floor((diff % 86400000) / 3600000);
+    const minutes = Math.floor((diff % 3600000)  / 60000);
+    const seconds = Math.floor((diff % 60000)    / 1000);
+
+    document.getElementById('days').textContent    = pad(days, 3);
+    document.getElementById('hours').textContent   = pad(hours, 2);
+    document.getElementById('minutes').textContent = pad(minutes, 2);
+    document.getElementById('seconds').textContent = pad(seconds, 2);
+  }
+
+  function updateUI() {
+    document.getElementById('main-title').textContent = titleText;
+    document.getElementById('subtitle-line').style.display = '';
+    document.getElementById('subtitle-line').innerHTML =
+      subtitleText + ' <strong id="target-display">' + formatDate(targetDate) + '</strong>';
+    updateDisplay();
+  }
+
+  // ── Modal ─────────────────────────────────────────────────
+  function openModal() {
+    document.getElementById('input-title').value    = titleText;
+    document.getElementById('input-subtitle').value = subtitleText;
+    const pad2 = n => String(n).padStart(2,'0');
+    const d    = targetDate;
+    document.getElementById('input-datetime').value =
+      d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) +
+      'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    document.getElementById('modal-overlay').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('active');
+  }
+
+  function saveSettings() {
+    const t  = document.getElementById('input-title').value.trim();
+    const s  = document.getElementById('input-subtitle').value.trim();
+    const dt = document.getElementById('input-datetime').value;
+    if (t)  titleText    = t.toUpperCase();
+    if (s)  subtitleText = s;
+    if (dt) targetDate   = new Date(dt);
+    updateUI();
+    closeModal();
+  }
+
+  document.getElementById('modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── Init ──────────────────────────────────────────────────
+  updateUI();
+  setInterval(updateDisplay, 1000);
+</script>
+</body>
+</html>
