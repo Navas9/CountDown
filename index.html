@@ -27,29 +27,31 @@
     max-width: 1100px;
   }
 
-  .title {
-    color: #4dcfea;
-    font-size: clamp(1.2rem, 3.5vw, 2.2rem);
-    letter-spacing: 0.35em;
-    text-transform: uppercase;
-    margin-bottom: 40px;
-    opacity: 0.85;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-  }
+.title {
+  color: #4dcfea;
+  font-size: clamp(1.2rem, 3.5vw, 2.2rem);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-bottom: 40px;
+  opacity: 0.85;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  text-overflow: ellipsis;
+  white-space: normal;
+  width: 100%;
+  text-align: center;
+  line-height: 1.2;
+}
 
-  .title::before {
-    content: "⏱";
-    font-size: 1.4em;
-    opacity: 0.8;
-    flex-shrink: 0;
-  }
+.title::before {
+  content: "⏱";
+  font-size: 1.4em;
+  opacity: 0.8;
+  flex-shrink: 0;
+  margin-right: 14px;
+}
 
   .clock {
     display: flex;
